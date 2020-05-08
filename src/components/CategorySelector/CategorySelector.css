@@ -1,0 +1,8 @@
+.category-selector {
+    padding: .6rem;
+    width: 100%;
+}
+.category-selector, 
+.category-selector option {
+    text-transform: capitalize;
+}
