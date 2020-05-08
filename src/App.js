@@ -1,102 +1,120 @@
-import React from 'react';
-import styles from './styles.css';
+import React, { useState, useEffect } from "react";
+import styles from "./styles.css";
 
-const categoriesArray = ['TODAS', 'noticias', 'guayaquil', 'deportes', 'entretenimiento', 'la revista']
+const categoriesArray = [
+  "TODAS",
+  "noticias",
+  "guayaquil",
+  "deportes",
+  "entretenimiento",
+  "la revista",
+];
+const titleList = "Lo más leido";
 
 function CategorySelector(props) {
-  const itemsMrkp = props.items.map(item => <option key={`cat-${item}`} value={item}>{item}</option>)
-  return (
-    <select>
-      {itemsMrkp}
-    </select>
-  )
+  const itemsMrkp = props.items.map((item) => (
+    <option key={`cat-${item}`} value={item}>
+      {item}
+    </option>
+  ));
+  return <select onChange={props.onChange}>{itemsMrkp}</select>;
 }
 
-const articlesData = [
-  {
-    //stats
-    "visits": 23,
-    "article": 2,
-    //endstats
-    "sections": [
-      "la revista"
-    ],
-    "title": "Test article",
-    "path": "eluniverso.com/guayaquil/2020/05/07/nota/7835022/coronavirus-ecuador-que-bibicleta-comprar-andar-ciudad"
-  },
-  {
-    //stats
-    "visits": 23,
-    "article": 2,
-    //endstats
-    "sections": [
-      "guayaquil"
-    ],
-    "title": "Test article",
-    "path": "eluniverso.com/guayaquil/2020/05/07/nota/7835022/coronavirus-ecuador-que-bibicleta-comprar-andar-ciudad"
-  },
-  {
-    //stats
-    "visits": 23,
-    "article": 2,
-    //endstats
-    "sections": [
-      "noticias"
-    ],
-    "title": "Test article",
-    "path": "eluniverso.com/guayaquil/2020/05/07/nota/7835022/coronavirus-ecuador-que-bibicleta-comprar-andar-ciudad"
-  },
-  {
-    //stats
-    "visits": 23,
-    "article": 2,
-    //endstats
-    "sections": [
-      "entretenimiento"
-    ],
-    "title": "Test article",
-    "path": "eluniverso.com/guayaquil/2020/05/07/nota/7835022/coronavirus-ecuador-que-bibicleta-comprar-andar-ciudad"
-  },
-  {
-    //stats
-    "visits": 23,
-    "article": 2,
-    //endstats
-    "sections": [
-      "deportes"
-    ],
-    "title": "Test article",
-    "path": "eluniverso.com/guayaquil/2020/05/07/nota/7835022/coronavirus-ecuador-que-bibicleta-comprar-andar-ciudad"
-  }
-]
-
 function ArticlesList(props) {
-  const title = props.title
-  const articles = props.articles 
+  const title = props.title;
+  const articles = props.articles;
   const articlesMrkp = articles.map((item, inx) => {
-    return (<li>
-      <i>inx++</i>
-      <p>
-        <a href={`https://${item.path}`} target="_blank" rel="noopener noreferrer">{item.title}</a>
-      </p>
-    </li>)
-  })
+    return (
+      <li
+        key={`article-${inx}`}
+        title={`${item.visits} visita${item.visits > 1 ? "s" : ""}`}
+      >
+        <i>{++inx}</i>
+        <p>
+          <a
+            href={`https://${item.path}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {item.title}
+          </a>
+        </p>
+      </li>
+    );
+  });
+
   return (
     <div>
       <h2>{title}</h2>
-      <ul>
-        {articlesMrkp}
-      </ul>
+      <ul>{articlesMrkp}</ul>
     </div>
-  )
+  );
 }
 
-
 function App() {
+  const [allArticles, setAllArticles] = useState([]);
+  const [categoryArticles, setCategoryArticles] = useState([]);
+  const [categorySelected, setCategorySelected] = useState("TODAS");
+  const LoadArticlesData = () => {
+    const url = new URL("https://api.chartbeat.com/live/toppages/v3/");
+    const endpointConfig = {
+      apikey: "489ca5d5c6e07f057ec7d9a6a69be9d8",
+      host: "eluniverso.com",
+      limit: 1000,
+    };
+    url.search = new URLSearchParams(endpointConfig).toString();
+    return fetch(url)
+      .then(function (response) {
+        return response.json();
+      })
+      .then(function (json) {
+        const { pages } = json;
+        return Promise.resolve(
+          pages
+            .filter((el) => el.stats.article > 0)
+            .sort((a, b) => b.stats.visits - a.stats.visits)
+            .map((el) => ({
+              visits: el.stats.visits,
+              article: el.stats.article,
+              sections: el.sections,
+              title: el.title === "" ? "Sin título" : el.title,
+              path: el.path,
+            }))
+        );
+      });
+  };
+  const updateResults = (criteria) => {
+    if (criteria === "TODAS") {
+      setCategoryArticles(allArticles);
+    } else {
+      const articlesFiltered = [...allArticles]
+        .filter((art) => art.sections.includes(criteria))
+        .slice(0, 5);
+      setCategoryArticles(articlesFiltered);
+    }
+  };
+  const changeCategory = (e) => {
+    setCategorySelected(e.target.value);
+  };
+
+  useEffect(() => {
+    LoadArticlesData().then((formatedData) => {
+      setAllArticles(formatedData);
+      setCategoryArticles(formatedData);
+    });
+  }, []);
+  useEffect(() => {
+    updateResults(categorySelected);
+  }, [categorySelected]);
+
   return (
     <div className="App">
-      <CategorySelector items={categoriesArray} />
-      <ArticlesList articles={articlesData} />
+      <CategorySelector
+        items={categoriesArray}
+        category={categorySelected}
+        onChange={changeCategory}
+      />
+      <ArticlesList title={titleList} articles={categoryArticles} />
     </div>
   );
 }
