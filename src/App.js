@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import styles from "./styles.css";
+import "./styles.css";
 
 const categoriesArray = [
   "TODAS",
@@ -17,7 +17,12 @@ function CategorySelector(props) {
       {item}
     </option>
   ));
-  return <select onChange={props.onChange}>{itemsMrkp}</select>;
+  return (
+    <fieldset>
+      <legend>Seleccione una categoria:</legend>
+      <select className="category-selector" onChange={props.onChange}>{itemsMrkp}</select>
+    </fieldset>
+  );
 }
 
 function ArticlesList(props) {
@@ -26,12 +31,14 @@ function ArticlesList(props) {
   const articlesMrkp = articles.map((item, inx) => {
     return (
       <li
+        className="article-item"
         key={`article-${inx}`}
         title={`${item.visits} visita${item.visits > 1 ? "s" : ""}`}
       >
-        <i>{++inx}</i>
-        <p>
+        <i className="article-counter">{++inx}</i>
+        <p className="article-title">
           <a
+            className="article-link"
             href={`https://${item.path}`}
             target="_blank"
             rel="noopener noreferrer"
@@ -44,9 +51,9 @@ function ArticlesList(props) {
   });
 
   return (
-    <div>
-      <h2>{title}</h2>
-      <ul>{articlesMrkp}</ul>
+    <div className="app">
+      <h2 className="title-list">{title}</h2>
+      <ul className="article-list">{articlesMrkp}</ul>
     </div>
   );
 }
@@ -108,7 +115,7 @@ function App() {
   }, [categorySelected]);
 
   return (
-    <div className="App">
+    <div className="app-container">
       <CategorySelector
         items={categoriesArray}
         category={categorySelected}
