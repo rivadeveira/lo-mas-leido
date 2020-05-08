@@ -1,3 +1,5 @@
+import { getCleanTitleFromPath } from "./stringUtils";
+
 export const LoadArticlesData = () => {
   const url = new URL("https://api.chartbeat.com/live/toppages/v3/");
   const endpointConfig = {
@@ -13,20 +15,23 @@ export const LoadArticlesData = () => {
     .then(function (json) {
       /**
        * Considerations for the endpoint result:
-       * - When the article has an empty title, define a default title
+       * - Also articles with no section are ommitted
+       * - When the article has an empty title, get the title from the path
        * - There is no "unique id" for each one of the articles,
        *   generate a provisional id when rendering the list
        */
       const { pages } = json;
       return Promise.resolve(
         pages
-          .filter((el) => el.stats.article > 0)
+          .filter(
+            (el) => el.stats.article > 0 || !el.sections.includes("no section")
+          )
           .sort((a, b) => b.stats.visits - a.stats.visits)
           .map((el) => ({
             visits: el.stats.visits,
             article: el.stats.article,
             sections: el.sections,
-            title: el.title === "" ? "Sin título" : el.title, //default title = "Sin título"
+            title: el.title === "" ? getCleanTitleFromPath(el.path) : el.title, // override if title is empty
             path: el.path,
           }))
       );
